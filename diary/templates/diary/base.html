@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Личный дневник - храните мысли в безопасности{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+</head>
+<body>
+    {% include "diary/headers.html" %}
+    <div class="container mt-5">
+        {% block content %}{% endblock %}
+    </div>
+    {% include "diary/footer.html" %}
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

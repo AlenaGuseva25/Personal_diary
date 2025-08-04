@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Удаление записи | Личный дневник{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="auth-card">
+        <h2 class="mb-4">Подтверждение удаления</h2>
+        
+        <div class="alert alert-warning mb-4">
+            <h5 class="alert-heading">Вы уверены, что хотите удалить запись?</h5>
+            <p class="mb-0">"{{ object.title }}" от {{ object.created_at|date:"d.m.Y" }}</p>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'diary-detail' object.pk %}" class="btn btn-outline-secondary">Отмена</a>
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Удалить
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
