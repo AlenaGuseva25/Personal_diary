@@ -31,15 +31,13 @@ class CreateDiaryView(LoginRequiredMixin, CreateView):
 
 class DiaryListView(UserFilterMixin, ListView):
     '''Мои записи'''
-    template_name = 'diary/list.html'
-    context_object_name = 'diary_entries'
+    template_name = 'diary/diary_list.html'
+    context_object_name = 'diary_list'
     paginate_by = 10
     ordering = ('-created_at',)
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
+    def get_search_results(self, queryset):
         search_query = self.request.GET.get('q')
-
         if search_query:
             return queryset.filter(
                 Q(title__icontains=search_query) |
@@ -50,7 +48,7 @@ class DiaryListView(UserFilterMixin, ListView):
 
 class DiaryDetailView(DiaryBaseView, OwnerRequiredMixin, DetailView):
     '''Инфо личной записи'''
-    template_name = 'diary/detail.html'
+    template_name = 'diary/diary_detail.html'
     context_object_name = 'diary_entry'
 
 

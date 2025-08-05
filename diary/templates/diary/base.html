@@ -1,17 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Личный дневник - храните мысли в безопасности{% endblock %}</title>
+    <title>{% block title %}Личный дневник{% endblock %}</title>
     <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            color: #495057;
+        }
+        .content-card {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .navbar {
+            background-color: #e9ecef !important;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .btn-primary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        .btn-primary:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+        }
+        .list-group-item {
+            border-color: #e9ecef;
+        }
+        .list-group-item:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
 </head>
 <body>
     {% include "diary/headers.html" %}
-    <div class="container mt-5">
+
+    <main class="container mt-4">
         {% block content %}{% endblock %}
-    </div>
+    </main>
+
     {% include "diary/footer.html" %}
+
     <script src="/static/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

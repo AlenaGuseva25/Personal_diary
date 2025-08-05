@@ -1,47 +1,48 @@
-{% extends 'base.html' %}
-
-{% block title %}{{ view.object.title if view.object else "Создать запись" }} — Личный дневник{% endblock %}
+{% extends 'diary/base.html' %}
 
 {% block content %}
-<div class="auth-card">
-    <h2 style="margin-bottom: 20px;">
+<div class="content-card">
+    <h2 class="mb-4 text-dark">
         {% if view.object %}
             Редактировать запись
         {% else %}
-            Создать новую запись
+            Новая запись
         {% endif %}
     </h2>
 
-    <form method="post" enctype="multipart/form-data" novalidate>
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <div style="margin-bottom: 15px;">
-            <label for="id_title" style="display: block; font-weight: 600; margin-bottom: 5px;">Заголовок</label>
+
+        <div class="mb-3">
+            <label class="form-label text-secondary">Заголовок</label>
             {{ form.title }}
             {% if form.title.errors %}
-                <div style="color: #d9534f; margin-top: 5px;">{{ form.title.errors }}</div>
+                <div class="text-danger small mt-1">{{ form.title.errors }}</div>
             {% endif %}
         </div>
 
-        <div style="margin-bottom: 15px;">
-            <label for="id_content" style="display: block; font-weight: 600; margin-bottom: 5px;">Содержание</label>
+        <div class="mb-3">
+            <label class="form-label text-secondary">Содержание</label>
             {{ form.content }}
             {% if form.content.errors %}
-                <div style="color: #d9534f; margin-top: 5px;">{{ form.content.errors }}</div>
+                <div class="text-danger small mt-1">{{ form.content.errors }}</div>
             {% endif %}
         </div>
 
-        <div style="margin-bottom: 20px;">
-            <label for="id_picture" style="display: block; font-weight: 600; margin-bottom: 5px;">Картинка (необязательно)</label>
+        <div class="mb-4">
+            <label class="form-label text-secondary">Изображение (необязательно)</label>
             {{ form.picture }}
             {% if form.picture.errors %}
-                <div style="color: #d9534f; margin-top: 5px;">{{ form.picture.errors }}</div>
+                <div class="text-danger small mt-1">{{ form.picture.errors }}</div>
             {% endif %}
         </div>
 
-        <button type="submit" class="btn btn-primary">
-            {% if view.object %}Сохранить изменения{% else %}Создать запись{% endif %}
-        </button>
-        <a href="{% url 'diary-list' %}" class="btn btn-secondary" style="margin-left: 10px;">Отмена</a>
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'diary:list' %}" class="btn btn-outline-secondary">Отмена</a>
+            <button type="submit" class="btn btn-primary">
+                {% if view.object %}Сохранить изменения{% else %}Создать запись{% endif %}
+            </button>
+        </div>
     </form>
 </div>
 {% endblock %}

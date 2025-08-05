@@ -7,7 +7,7 @@ from django.contrib.auth.forms import (
 )
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from .models import ConfirmaionCode
+from .models import ConfirmationCode
 
 User = get_user_model()
 
@@ -22,13 +22,19 @@ class RegistrationForm(UserCreationForm):
             raise ValidationError("Пользователь с таким email уже существует")
         return email
 
+    def clean_password(self):
+        if self.cleaned_data['password1'] != self.cleaned_data['password2']:
+            raise forms.ValidationError("Пароли не совпадают")
+        return self.cleaned_data
+
+
 class EmailAuthenticationForm(AuthenticationForm):
     username = forms.EmailField(label="Email")
 
 class SignUpForm(forms.Form):
     email = forms.EmailField()
 
-class ConfirmaionCodeForm(forms.Form):
+class ConfirmationCodeForm(forms.Form):
     code = forms.CharField(
         max_length=6,
         min_length=6,
@@ -42,7 +48,7 @@ class ConfirmaionCodeForm(forms.Form):
     def clean_code(self):
         code = self.cleaned_data['code']
         try:
-            confirm_code = ConfirmaionCode.objects.get(
+            confirm_code = ConfirmationCode.objects.get(
                 user=self.user,
                 code=code,
                 is_active=True
@@ -50,7 +56,7 @@ class ConfirmaionCodeForm(forms.Form):
             if not confirm_code.is_valid():
                 raise ValidationError('Код устарел (действителен только 2 минуты)')
             return code
-        except ConfirmaionCode.DoesNotExist:
+        except ConfirmationCode.DoesNotExist:
             raise ValidationError('Неверный код подтверждения')
 
 class PasswordResetForm(BasePasswordResetForm):
