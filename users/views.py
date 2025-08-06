@@ -9,7 +9,7 @@ from django.urls import reverse_lazy
 from django.views.generic import FormView
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView, LoginView, LogoutView
 
-from users.forms import RegistrationForm
+from users.forms import RegistrationForm, ConfirmationCodeForm
 from users.models import ConfirmationCode
 from users.models import User
 
@@ -57,7 +57,7 @@ class CustomLogoutView(LogoutView):
 
 class ConfirmCodeView(FormView):
     template_name = 'users/confirm_code.html'
-    form_class = ConfirmLoginCodeForm
+    form_class = ConfirmationCodeForm
     success_url = reverse_lazy('diary-list')
 
     def get_form_kwargs(self):
@@ -96,8 +96,32 @@ class ConfirmCodeView(FormView):
             return self.form_invalid(form)
 
 
+class ResendCodeView(FormView):
+    '''Повторная отправка кода ХХХХХХ'''
+    template_name = 'users/resend_code.html'
+    form_class = ConfirmationCodeForm
+
+    def get(self, request):
+        if 'user_email'not in self.request.session:
+            return redirect('register')
+
+        user = User.objects.get(email=self.request.session['user_email'])
+        code = ConfirmationCode.generate_code(user)
+
+        send_mail(
+            'Новый код подтверждения',
+            f'Ваш новый код: {code.code}\n\nКод действителен в течение 2 минут.',
+            None,
+            [user.email],
+            fail_silently=False,
+        )
+
+        messages.success(request, 'Новый код отправлен на вашу почту')
+        return redirect('confirm')
+
+
 class CustomPasswordResetView(PasswordResetView):
-    template_name = 'users/password_reset.html'
+    template_name = 'users/password_reset_email.html'
     email_template_name = 'users/password_reset_email.html'
     success_url = reverse_lazy('password_reset_done')
 

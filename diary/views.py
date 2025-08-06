@@ -5,18 +5,19 @@ from django.urls import reverse_lazy
 from .models import DiaryEntry
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .utils import OwnerRequiredMixin, UserFilterMixin
+from users.utils import ActiveUserMixin
 
 
-class DiaryBaseView(LoginRequiredMixin):
-    '''Базовый для views, приватность'''
+class DiaryBaseView(ActiveUserMixin):
+    '''Базовый для views, приватность, фильтрация по владельцу'''
     model = DiaryEntry
     raise_exception = True
 
     def get_queryset(self):
-        return DiaryEntry.objects.filter(owner=self.request.user)
+        return super().get_queryset().filter(owner=self.request.user)
 
 
-class CreateDiaryView(LoginRequiredMixin, CreateView):
+class CreateDiaryView(DiaryBaseView, CreateView):
     '''Создание записи'''
     model = DiaryEntry
     fields = ['title', 'content', 'picture']
@@ -29,7 +30,7 @@ class CreateDiaryView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('diary-list')
 
 
-class DiaryListView(UserFilterMixin, ListView):
+class DiaryListView(DiaryBaseView, ListView):
     '''Мои записи'''
     template_name = 'diary/diary_list.html'
     context_object_name = 'diary_list'
