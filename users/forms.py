@@ -1,78 +1,33 @@
 from django import forms
-from django.contrib.auth.forms import (
-    UserCreationForm,
-    AuthenticationForm,
-    PasswordResetForm as BasePasswordResetForm,
-    SetPasswordForm
-)
-from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
-from .models import ConfirmationCode
+from django.contrib.auth.forms import (AuthenticationForm, PasswordResetForm,
+                                       SetPasswordForm, UserCreationForm)
 
-User = get_user_model()
+from .models import User
 
-class RegistrationForm(UserCreationForm):
+
+class RegisterForm(UserCreationForm):
+    "Форма регистрации с email"
+
     class Meta:
         model = User
-        fields = ['email', 'password1', 'password2']
-
-    def clean_email(self):
-        email = self.cleaned_data['email']
-        if User.objects.filter(email=email).exists():
-            raise ValidationError("Пользователь с таким email уже существует")
-        return email
-
-    def clean_password(self):
-        if self.cleaned_data['password1'] != self.cleaned_data['password2']:
-            raise forms.ValidationError("Пароли не совпадают")
-        return self.cleaned_data
+        fields = ("email", "password1", "password2")
 
 
-class EmailAuthenticationForm(AuthenticationForm):
-    username = forms.EmailField(label="Email")
+class LoginForm(AuthenticationForm):
+    username = forms.EmailField(label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}))
 
-class SignUpForm(forms.Form):
-    email = forms.EmailField()
 
-class ConfirmationCodeForm(forms.Form):
-    code = forms.CharField(
-        max_length=6,
-        min_length=6,
-        widget=forms.TextInput(attrs={'placeholder': 'XXXXXX'})
-    )
+class CustomPasswordResetForm(PasswordResetForm):
+    "Форма сброса пароля"
 
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
-        super().__init__(*args, **kwargs)
+    class Meta:
+        model = User
+        fields = ("email",)
 
-    def clean_code(self):
-        code = self.cleaned_data['code']
-        try:
-            confirm_code = ConfirmationCode.objects.get(
-                user=self.user,
-                code=code,
-                is_active=True
-            )
-            if not confirm_code.is_valid():
-                raise ValidationError('Код устарел (действителен только 2 минуты)')
-            return code
-        except ConfirmationCode.DoesNotExist:
-            raise ValidationError('Неверный код подтверждения')
 
-class PasswordResetForm(BasePasswordResetForm):
-    email = forms.EmailField(
-        label="Email",
-        widget=forms.EmailInput(attrs={'autocomplete': 'email'})
-    )
-
-class NewPasswordForm(SetPasswordForm):
-    new_password1 = forms.CharField(
-        label="Новый пароль",
-        widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),
-        strip=False,
-    )
-    new_password2 = forms.CharField(
-        label="Подтвердите пароль",
-        strip=False,
-        widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),
-    )
+class ChangePasswordForm(SetPasswordForm):
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
+        self.fields["new_password1"].widget.attrs.update({"class": "form-control"})
+        self.fields["new_password2"].widget.attrs.update({"class": "form-control"})

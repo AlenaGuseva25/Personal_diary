@@ -1,5 +1,5 @@
 from django.db import models
-from config.settings import AUTH_USER_MODEL
+from django.conf import settings
 
 
 class DiaryEntry(models.Model):
@@ -13,7 +13,7 @@ class DiaryEntry(models.Model):
                                 help_text='Прикрепите фото для вашей записи')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True ,verbose_name='Дата изменения')
-    owner = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Владелец')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Автор')
 
     class Meta:
         ordering = ['-created_at']
@@ -21,4 +21,4 @@ class DiaryEntry(models.Model):
         verbose_name_plural = 'Личные записи'
 
     def __str__(self):
-        return f'{self.title} ({self.owner})'
+        return f'{self.title} ({self.author})'

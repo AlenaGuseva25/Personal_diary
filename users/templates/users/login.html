@@ -1,20 +1,33 @@
 {% extends "diary/base.html" %}
 
 {% block content %}
-<div class="auth-card">
-    <h2 class="text-center mb-4">Вход в дневник</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary w-100 mt-3">
-            Войти
-        </button>
-    </form>
-    <div class="text-center mt-3">
-        Нет аккаунта? <a href="{% url 'users:register' %}">Зарегистрируйтесь</a>
-    </div>
-    <div class="text-center mt-2">
-        <a href="{% url 'users:password_reset' %}">Забыли пароль?</a>
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-body p-4">
+                <h2 class="text-center mb-4" style="color: #2c3e50;">Вход в дневник</h2>
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                        <div class="text-danger small mt-1">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <button type="submit" class="btn btn-primary w-100 mt-3 py-2">
+                        Войти
+                    </button>
+                </form>
+                <div class="text-center mt-3">
+                    <small>Нет аккаунта? <a href="{% url 'users:register' %}">Зарегистрируйтесь</a></small>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

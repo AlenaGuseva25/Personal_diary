@@ -1,131 +1,130 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login
-from django.utils import timezone
-from django.contrib.auth import get_user_model
+import uuid
+from django.conf import settings
 from django.contrib import messages
-from allauth.account.forms import ConfirmLoginCodeForm
+from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth import views as auth_views
 from django.core.mail import send_mail
+from django.db import transaction
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.views.generic import FormView
-from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView, LoginView, LogoutView
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
+from django.views.generic import CreateView, FormView, TemplateView
+from django.contrib.auth.views import LogoutView as AuthLogoutView
 
-from users.forms import RegistrationForm, ConfirmationCodeForm
-from users.models import ConfirmationCode
-from users.models import User
-
-User = get_user_model()
+from .forms import LoginForm, RegisterForm, CustomPasswordResetForm, ChangePasswordForm
+from .models import User
 
 
-class Register(FormView):
-    '''Регистрация пользователя с отправкой кода подтверждения'''
-    template_name = 'users/register.html'
-    form_class = RegistrationForm
-    success_url = reverse_lazy('confirm')
+class RegisterView(CreateView):
+    form_class = RegisterForm
+    template_name = "users/register.html"
+    success_url = reverse_lazy("users:register")
 
     def form_valid(self, form):
-        email = form.cleaned_data['email']
-        password = form.cleaned_data['password1']
+        user = form.save(commit=False)
+        token = user.generate_verification_token()
+        user.is_active = False
+        user.save()
 
-        user = User.objects.create_user(
-            email=email,
-            password=password,
-            is_active=False
+        verification_link = self.request.build_absolute_uri(
+            f"/users/verify/{token}/"
         )
-
-        code = ConfirmationCode.generate_code(user)
         send_mail(
-            'Код подтверждения для вашего дневника',
-            f'Ваш код подтверждения: {code.code}\n\nКод действителен в течение 2 минут.',
-            None,
+            "Подтверждение регистрации в личном дневнике",
+            f"Перейдите по ссылке для подтверждения: {verification_link}",
+            settings.EMAIL_HOST_USER,
             [user.email],
             fail_silently=False,
         )
 
-        self.request.session['user_email'] = user.email
-        self.request.session['register_time'] = str(timezone.now())
-
+        messages.success(
+            self.request, "Письмо с подтверждением отправлено на вашу электронную почту"
+        )
         return super().form_valid(form)
 
 
-class CustomLoginView(LoginView):
-    template_name = 'users/login.html'
-
-
-class CustomLogoutView(LogoutView):
-    template_name = 'users/logout.html'
-
-
-class ConfirmCodeView(FormView):
-    template_name = 'users/confirm_code.html'
-    form_class = ConfirmationCodeForm
-    success_url = reverse_lazy('diary-list')
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['user'] = User.objects.get(email=self.request.session['user_email'])
-        return kwargs
+class LoginView(FormView):
+    form_class = LoginForm
+    template_name = "users/login.html"
+    success_url = reverse_lazy("diary:diary_list")
 
     def form_valid(self, form):
-        user = User.objects.get(email=self.request.session['user_email'])
+        user = form.get_user()
+        if not user.is_active:
+            messages.error(self.request, "Подтвердите ваш адрес электронной почты")
+            return redirect("users:login")
+
+        login(self.request, user)
+        return super().form_valid(form)
+
+
+class LogoutView(AuthLogoutView):
+    next_page = reverse_lazy("users:login")
+
+
+class VerifyEmailView(TemplateView):
+    template_name = "users/verify_email.html"
+
+    def get(self, request, token):
         try:
-            code_obj = ConfirmationCode.objects.get(
-                user=user,
-                code=form.cleaned_data['code'],
-                is_active=True
-            )
-            if not code_obj.is_valid():
-                form.add_error('code', 'Код устарел')
-                return self.form_invalid(form)
-
+            user = User.objects.get(verification_token=token)
             user.is_active = True
+            user.verification_token = None
             user.save()
-            code_obj.is_active = False
-            code_obj.save()
-            login(self.request, user)
-
-            if 'user_email' in self.request.session:
-                del self.request.session['user_email']
-            if 'confirm_attempts' in self.request.session:
-                del self.request.session['confirm_attempts']
-
-            messages.success(self.request, 'Email успешно подтвержден!')
-            return super().form_valid(form)
-
-        except ConfirmationCode.DoesNotExist:
-            form.add_error('code', 'Неверный код')
-            return self.form_invalid(form)
+            messages.success(request, "Ваша электронная почта успешно подтверждена.")
+            return redirect("users:login")
+        except User.DoesNotExist:
+            messages.error(request, "Недействительная ссылка подтверждения.")
+            return redirect("users:register")
 
 
-class ResendCodeView(FormView):
-    '''Повторная отправка кода ХХХХХХ'''
-    template_name = 'users/resend_code.html'
-    form_class = ConfirmationCodeForm
+class CustomPasswordResetView(auth_views.PasswordResetView):
+    template_name = "users/password_reset.html"
+    success_url = reverse_lazy("users:password_reset_done")
+    form_class = CustomPasswordResetForm
+    email_template_name = "users/password_reset_email.html"
+    subject_template_name = "users/password_reset_subject.txt"
 
-    def get(self, request):
-        if 'user_email'not in self.request.session:
-            return redirect('register')
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        token = user.generate_verification_token()
 
-        user = User.objects.get(email=self.request.session['user_email'])
-        code = ConfirmationCode.generate_code(user)
-
+        verification_link = f"{settings.DOMAIN}/users/verify/{token}/"
         send_mail(
-            'Новый код подтверждения',
-            f'Ваш новый код: {code.code}\n\nКод действителен в течение 2 минут.',
-            None,
+            "Восстановление пароля",
+            f"Перейдите по ссылке для смены пароля: {verification_link}",
+            settings.EMAIL_HOST_USER,
             [user.email],
             fail_silently=False,
         )
 
-        messages.success(request, 'Новый код отправлен на вашу почту')
-        return redirect('confirm')
+        messages.success(
+            self.request,
+            "Письмо со ссылкой для смены пароля отправлено на вашу электронную почту",
+        )
+        return super().form_valid(form)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["domain"] = settings.DOMAIN
+        context["protocol"] = "https" if self.request.is_secure() else "http"
+        return context
 
-class CustomPasswordResetView(PasswordResetView):
-    template_name = 'users/password_reset_email.html'
-    email_template_name = 'users/password_reset_email.html'
-    success_url = reverse_lazy('password_reset_done')
+@method_decorator(never_cache, name='dispatch')
+class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
+    "Установка нового пароля, сброс старого"
 
+    form_class = ChangePasswordForm
+    template_name = "users/registration/password_reset_confirm.html"
+    success_url = reverse_lazy("users:password_reset_complete")
 
-class CustomPasswordResetConfirmView(PasswordResetConfirmView):
-    template_name = 'users/password_reset_confirm.html'
-    success_url = reverse_lazy('login')
+    def form_valid(self, form):
+        if form.errors:
+            print("Ошибки формы:", form.errors)
+            return self.form_invalid(form)
+        with transaction.atomic():
+            response = super().form_valid(form)
+            update_session_auth_hash(self.request, self.request.user)
+        messages.success(self.request, "Пароль успешно изменён")
+        return response

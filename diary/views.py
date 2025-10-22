@@ -2,32 +2,32 @@ from django.shortcuts import render
 from django.views.generic import CreateView, ListView, DetailView, DeleteView, UpdateView
 from django.db.models import Q
 from django.urls import reverse_lazy
+
 from .models import DiaryEntry
+from .forms import DiaryEntryForm
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .utils import OwnerRequiredMixin, UserFilterMixin
-from users.utils import ActiveUserMixin
+from .permissions import OwnerRequiredMixin
+from users.permissions import ActiveUserMixin
 
 
 class DiaryBaseView(ActiveUserMixin):
     '''Базовый для views, приватность, фильтрация по владельцу'''
     model = DiaryEntry
-    raise_exception = True
 
     def get_queryset(self):
-        return super().get_queryset().filter(owner=self.request.user)
+        return DiaryEntry.objects.filter(author=self.request.user)
 
 
 class CreateDiaryView(DiaryBaseView, CreateView):
     '''Создание записи'''
-    model = DiaryEntry
-    fields = ['title', 'content', 'picture']
+    form_class = DiaryEntryForm
     template_name = 'diary/form.html'
 
     def form_valid(self, form):
-        form.instance.owner = self.request.user
+        form.instance.author = self.request.user
         return super().form_valid(form)
 
-    success_url = reverse_lazy('diary-list')
+    success_url = reverse_lazy('diary:diary_list')
 
 
 class DiaryListView(DiaryBaseView, ListView):
@@ -35,9 +35,9 @@ class DiaryListView(DiaryBaseView, ListView):
     template_name = 'diary/diary_list.html'
     context_object_name = 'diary_list'
     paginate_by = 10
-    ordering = ('-created_at',)
 
-    def get_search_results(self, queryset):
+    def get_queryset(self):
+        queryset = super().get_queryset()
         search_query = self.request.GET.get('q')
         if search_query:
             return queryset.filter(
@@ -56,11 +56,11 @@ class DiaryDetailView(DiaryBaseView, OwnerRequiredMixin, DetailView):
 class DiaryDeleteView(DiaryBaseView, OwnerRequiredMixin, DeleteView):
     '''Удаление записи'''
     template_name = 'diary/confirm_delete.html'
-    success_url = reverse_lazy('diary-list')
+    success_url = reverse_lazy('diary:diary_list')
 
 
 class DiaryUpdateView(DiaryBaseView, OwnerRequiredMixin, UpdateView):
     '''Изменения записи'''
     template_name = 'diary/form.html'
-    fields = ['title', 'content', 'picture']
-    success_url = reverse_lazy('diary-list')
+    form_class = DiaryEntryForm
+    success_url = reverse_lazy('diary:diary_list')
