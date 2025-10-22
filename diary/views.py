@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.views.generic import CreateView, ListView, DetailView, DeleteView, UpdateView
+from django.views.generic import CreateView, ListView, DetailView, DeleteView, UpdateView, TemplateView
 from django.db.models import Q
 from django.urls import reverse_lazy
 
@@ -16,6 +16,19 @@ class DiaryBaseView(ActiveUserMixin):
 
     def get_queryset(self):
         return DiaryEntry.objects.filter(author=self.request.user)
+
+
+class HomeView(TemplateView):
+    template_name = 'diary/home.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated and self.request.user.is_active:
+            # Для авторизованных можно показать последние записи
+            context['recent_entries'] = DiaryEntry.objects.filter(
+                author=self.request.user
+            ).order_by('-created_at')[:3]
+        return context
 
 
 class CreateDiaryView(DiaryBaseView, CreateView):

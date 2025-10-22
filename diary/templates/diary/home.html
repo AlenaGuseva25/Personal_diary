@@ -1,0 +1,56 @@
+{% extends "diary/base.html" %}
+
+{% block content %}
+<div class="diary-container text-center">
+    <div class="mb-5">
+        <h1 class="display-4 mb-3" style="color: #2c3e50;">📖 Личный дневник</h1>
+        <p class="lead text-muted">Сохраняйте свои мысли, идеи и воспоминания</p>
+    </div>
+
+    <div class="row justify-content-center g-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-0">
+                <div class="card-body p-4">
+                    <h3>Мои записи</h3>
+                    <p class="text-muted">Просмотр всех ваших записей</p>
+                    <a href="{% url 'diary:diary_list' %}" class="btn btn-primary w-100">
+                        Посмотреть записи
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0">
+                <div class="card-body p-4">
+                    <h3>Новая запись</h3>
+                    <p class="text-muted">Создайте новую запись в дневнике</p>
+                    <a href="{% url 'diary:create' %}" class="btn btn-primary w-100">
+                        Создать запись
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if user.is_authenticated and user.is_active and recent_entries %}
+    <div class="mt-5">
+        <h3 class="mb-4">Последние записи</h3>
+        <div class="row justify-content-center">
+            {% for entry in recent_entries %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body text-start">
+                        <h5 class="card-title">{{ entry.title }}</h5>
+                        <p class="card-text text-muted small">{{ entry.content|truncatewords:20 }}</p>
+                        <a href="{% url 'diary:detail' entry.pk %}" class="btn btn-sm btn-outline-primary">
+                            Читать →
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
