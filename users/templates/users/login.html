@@ -23,8 +23,16 @@
                         Войти
                     </button>
                 </form>
+
+                <!-- ДОБАВЬ ЭТУ ССЫЛКУ -->
                 <div class="text-center mt-3">
-                    <small>Нет аккаунта? <a href="{% url 'users:register' %}">Зарегистрируйтесь</a></small>
+                    <small>
+                        <a href="{% url 'users:password_reset' %}" class="text-muted">Забыли пароль?</a>
+                    </small>
+                </div>
+
+                <div class="text-center mt-2">
+                    <small>Нет аккаунта? <a href="{% url 'users:register' %}" class="text-muted">Зарегистрируйтесь</a></small>
                 </div>
             </div>
         </div>

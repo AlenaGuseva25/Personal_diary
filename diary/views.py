@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.shortcuts import render
 from django.views.generic import CreateView, ListView, DetailView, DeleteView, UpdateView, TemplateView
 from django.db.models import Q
@@ -77,3 +78,8 @@ class DiaryUpdateView(DiaryBaseView, OwnerRequiredMixin, UpdateView):
     template_name = 'diary/form.html'
     form_class = DiaryEntryForm
     success_url = reverse_lazy('diary:diary_list')
+
+    def form_valid(self, form):
+        self.object = form.save()
+        DiaryEntry.objects.filter(pk=self.object.pk).update(updated_at=timezone.now())
+        return super().form_valid(form)
