@@ -65,9 +65,10 @@
                 <a class="nav-link text-muted" href="{% url 'diary:create' %}">
                     Новая запись
                 </a>
-                <a class="nav-link text-muted" href="{% url 'users:logout' %}">
-                    Выйти
-                </a>
+                <form method="post" action="{% url 'users:logout' %}" class="d-inline">
+                    {% csrf_token %}
+                <button type="submit" class="nav-link text-muted border-0 bg-transparent p-0">Выйти</button>
+                </form>
             </div>
             {% else %}
             <div class="navbar-nav ms-auto">
