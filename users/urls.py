@@ -9,7 +9,7 @@ urlpatterns = [
     # Регистрация/Авторизация
     path("register/", RegisterView.as_view(), name="register"),
     path("login/", LoginView.as_view(), name="login"),
-    path("logout/", LogoutView.as_view(), name="logout"),
+    path("logout/", LogoutView.as_view(next_page='users:login'), name="logout"),
     path("verify/<uuid:token>/", VerifyEmailView.as_view(), name="verify-email"),
 
     # Сброс пароля
