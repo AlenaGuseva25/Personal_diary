@@ -1,0 +1,32 @@
+[flake8]
+max-line-length = 127
+max-complexity = 10
+extend-ignore =
+    E128,
+    E402,
+    E501,
+    F401,
+    F403,
+    F405,
+    F811,
+    F821,
+    F822,
+    F841,
+    W191,
+    W291,
+    W292,
+    W293,
+    W391,
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    .github,
+    */migrations/*,
+    */site-packages/*,
+    */static/*,
+    */media/*,
+    */templates/*,
+    */settings/*
+per-file-ignores =
+    */settings/*:F405,F403

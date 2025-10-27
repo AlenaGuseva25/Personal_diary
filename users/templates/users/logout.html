@@ -1,0 +1,25 @@
+{% extends "diary/base.html" %}
+
+{% block content %}
+<div class="auth-card">
+    <div class="text-center mb-4">
+        <h2>Выход из приложения</h2>
+    </div>
+
+    <div class="text-center">
+        <p>Вы уверены, что хотите выйти?</p>
+
+        <form method="post" action="{% url 'users:logout' %}">
+            {% csrf_token %}
+            <div class="d-flex justify-content-center gap-3 mt-4">
+                <a href="{% url 'diary:diary_list' %}" class="btn btn-outline-secondary">
+                    Отмена
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    Выйти
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
